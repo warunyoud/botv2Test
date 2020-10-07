@@ -8,6 +8,8 @@ const ekoInterface = require('bot-king-eko-interface');
 
 const config = require('./config')
 
+const workflowTemplate = require('./templates/workflow.json');
+
 const bot = new BotKing({
   middleware
 });
@@ -55,6 +57,39 @@ const createResponse = (responseMap, text) => {
   return response;
 }
 
+const createWorkflowResponse = (workflows) => {
+  const response = Object.assign({}, workflowTemplate);
+
+  const items = workflows.map(workflow => {
+    return {
+        type: "action",
+        action: {
+            type: "workflow",
+            workflowId: workflow._id,
+            label: workflow.title,
+        }
+    }
+  });
+
+  response.quickReply.items = items;
+
+  if (items.length === 0) {
+    response.text = "We couldn't find any workflow that matched the search criteria";
+  }
+
+  return [response];
+}
+
+const searchWorkflow = async (client, replyToken, userId, keyword) => {
+  const endpoint = 'api/workflow/v1/users/' + userId + '?keyword=' + keyword;
+  const response = await client.instance.get(endpoint);
+  const data = await response.data;
+  const workflows = data.workflows || [];
+
+  const botResponse = createWorkflowResponse(workflows)
+  client.replyV2(replyToken, botResponse);
+}
+
 async function middleware (params, path) {
   try {
     const { events } = params;
@@ -81,6 +116,11 @@ async function middleware (params, path) {
           if (/\/send\s\w+\s\w+\s\w+$/.test(message.text)) {
             const [_, text, gid, tid] = message.text.split(' ');
             clients[path].pushV2(gid, tid, createResponse(responseMap, text));
+          } else if (/\/searchWorkflow\s\w+$/.test(message.text)) {
+            const [_, keyword] = message.text.split(' ');
+            const userId = event.source.userId;
+
+            searchWorkflow(clients[path], replyToken, userId, keyword)
           } else {
             clients[path].replyV2(replyToken, createResponse(responseMap, message.text));
           }
