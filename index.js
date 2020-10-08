@@ -179,8 +179,8 @@ async function middleware (params, path) {
           if (/\/send\s\w+\s\w+\s\w+$/.test(message.text)) {
             const [_, text, gid, tid] = message.text.split(' ');
             clients[path].pushV2(gid, tid, createResponse(responseMap, text));
-          } else if (/\/searchWorkflow\s\w+$/.test(message.text)) {
-            const [_, keyword] = message.text.split(' ');
+          } else if (/\/searchWorkflow\s.+$/.test(message.text)) {
+            const keyword = message.text.substr(message.text.indexOf(' ') + 1);
             const userId = event.source.userId;
 
             // Retrieve workflow from API
@@ -189,8 +189,8 @@ async function middleware (params, path) {
             // Send reply
             const response = createWorkflowResponse(workflows)
             clients[path].replyV2(replyToken, response);
-          } else if (/\/searchWorkflowTemplate\s\w+$/.test(message.text)) {
-            const [_, keyword] = message.text.split(' ');
+          } else if (/\/searchWorkflowTemplate\s.+$/.test(message.text)) {
+            const keyword = message.text.substr(message.text.indexOf(' ') + 1);
 
             // Retrieve workflow from API
             const templates = await searchWorkflowTemplate(clients[path], keyword);
