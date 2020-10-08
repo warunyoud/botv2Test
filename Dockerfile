@@ -6,6 +6,6 @@
  RUN npm ci
 
  COPY *.js /app/
+ COPY templates /app/templates
 
- # DevOps can override this entrypoint to other command later
  ENTRYPOINT ["npm", "run", "start"]
