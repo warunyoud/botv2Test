@@ -138,6 +138,30 @@ const searchWorkflowTemplate = async (client, keyword) => {
 }
 
 /*
+ *
+ */
+
+const createWorkflowWebhookResponse = (type, wid, title) => {
+  return [{
+    type: "text",
+    text: `Event received for Workflow "${title}" (id = "${wid}") - Type "${type}"`,
+  }];
+}
+
+const getGroupAndThreadForUser = async (client, userId) => {
+  try {
+    const endpoint = 'bot/v2/groups/users/' + userId;
+    const response = await client.instance.get(endpoint);
+    const data = await response.data;
+
+    return data;
+  } catch (error) {
+    console.log(error);
+    return {};
+  }
+}
+
+/*
  * Utils
  */
 
@@ -201,6 +225,20 @@ async function middleware (params, path) {
           } else {
             clients[path].replyV2(replyToken, createResponse(responseMap, message.text));
           }
+          break;
+        case 'workflow':
+          const { workflow } = event;
+          const { type, _id, title, recipients } = workflow;
+
+          for (let i = 0; i < recipients.length; i++) {
+            const recipient = recipients[i];
+            const response = await getGroupAndThreadForUser(clients[path], recipient);
+
+            if (response.gid && response.tid) {
+              clients[path].pushV2(response.gid, response.tid, createWorkflowWebhookResponse(type, _id, title));
+            }
+          }
+
           break;
       }
     });
