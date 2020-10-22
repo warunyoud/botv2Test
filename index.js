@@ -84,7 +84,7 @@ const createWorkflowResponse = (workflows) => {
   return [response];
 }
 
-const searchWorkflow = async (client, userId, keyword) => {
+const searchWorkflow = async (client, userId, keyword, tries = 0) => {
   try {
     const endpoint = 'api/workflow/v1/users/' + userId + '?keyword=' + keyword;
     const response = await client.instance.get(endpoint);
@@ -93,7 +93,13 @@ const searchWorkflow = async (client, userId, keyword) => {
     return data.workflows || [];
   } catch (error) {
     console.log(error);
-    return [];
+    
+    if (error.response && error.response.status === 401 && tries < 1) {
+      await client.token();
+      return searchWorkflow(client, userId, keyword, tries + 1);
+    } else {
+      return [];
+    }
   }
 }
 
@@ -124,7 +130,7 @@ const createWorkflowTemplateResponse = (templates) => {
   return [response];
 }
 
-const searchWorkflowTemplate = async (client, keyword) => {
+const searchWorkflowTemplate = async (client, keyword, tries = 0) => {
   try {
     const endpoint = 'api/workflow/v1?keyword=' + keyword;
     const response = await client.instance.get(endpoint);
@@ -133,7 +139,13 @@ const searchWorkflowTemplate = async (client, keyword) => {
     return data.templates || [];
   } catch (error) {
     console.log(error);
-    return [];
+    
+    if (error.response && error.response.status === 401 && tries < 1) {
+      await client.token();
+      return searchWorkflowTemplate(client, keyword, tries + 1);
+    } else {
+      return [];
+    }
   }
 }
 
