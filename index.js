@@ -86,7 +86,9 @@ const createWorkflowResponse = (workflows) => {
 
 const searchWorkflow = async (client, userId, keyword, tries = 0) => {
   try {
-    const endpoint = 'api/workflow/v1/users/' + userId + '?keyword=' + keyword;
+    // Retrieve only the first 13 elements, as that's the maximum number
+    // of quick replies allowed.
+    const endpoint = 'api/workflow/v1/users/' + userId + '?keyword=' + keyword + '&limit=13';
     const response = await client.instance.get(endpoint);
     const data = await response.data;
 
@@ -132,7 +134,9 @@ const createWorkflowTemplateResponse = (templates) => {
 
 const searchWorkflowTemplate = async (client, keyword, tries = 0) => {
   try {
-    const endpoint = 'api/workflow/v1?keyword=' + keyword;
+    // Retrieve only the first 13 elements, as that's the maximum number
+    // of quick replies allowed.
+    const endpoint = 'api/workflow/v1?keyword=' + keyword + '&limit=13';
     const response = await client.instance.get(endpoint);
     const data = await response.data;
     
