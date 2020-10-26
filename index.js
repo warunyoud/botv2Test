@@ -199,7 +199,7 @@ async function middleware (params, path) {
       switch (event.type) {
         case 'postback':
           const { postback } = event;
-          client.replyV2(replyToken, [
+          clients[path].replyV2(replyToken, [
             {
               "type": "text",
               "text": 'Postback received!'
