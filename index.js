@@ -9,6 +9,7 @@ const ekoInterface = require('bot-king-eko-interface');
 const config = require('./config')
 
 const workflowTemplate = require('./templates/workflow.json');
+const libraryTemplate = require('./templates/library.json');
 
 const bot = new BotKing({
   middleware
@@ -154,7 +155,78 @@ const searchWorkflowTemplate = async (client, keyword, tries = 0) => {
 }
 
 /*
- *
+ * Library
+ */
+
+const createLibraryResponse = (libraryItems) => {
+  const response = Object.assign({}, libraryTemplate);
+
+  const items = libraryItems.map(libraryItem => {
+    return {
+        type: "action",
+        action: {
+            type: "library",
+            label: trimLabel(libraryItem.label),
+            url: libraryItem.url,
+        }
+    }
+  });
+
+  response.quickReply.items = items;
+
+  if (items.length === 0) {
+    response.text = "We couldn't find any library items that matched the search criteria";
+  }
+
+  return [response];
+}
+
+const searchLibrary = async (client, userId, keyword, tries = 0) => {
+  try {
+    // Retrieve only the first 13 elements, as that's the maximum number
+    // of quick replies allowed.
+    const endpoint = 'api/library/v1/users/' + userId + '?keyword=' + keyword + '&limit=13';
+    const response = await client.instance.get(endpoint);
+    const data = await response.data;
+
+    return (data && data.length >= 0) ? data : [];
+  } catch (error) {
+    console.log(error);
+    
+    if (error.response && error.response.status === 401 && tries < 1) {
+      await client.token();
+      return searchLibrary(client, userId, keyword, tries + 1);
+    } else {
+      return [];
+    }
+  }
+}
+
+/*
+ * User
+ */
+
+const searchUser = async (client, groupId, userId, tries = 0) => {
+  try {
+    const endpoint = `bot/v2/groups/${groupId}/users/${userId}/info`;
+    const response = await client.instance.get(endpoint);
+    const user = await response.data;
+    
+    return user || {};
+  } catch (error) {
+    console.log(error);
+
+    if (error.response && error.response.status === 401 && tries < 1) {
+      await client.token();
+      return searchUser(client, groupId, userId, tries + 1);
+    } else {
+      return {};
+    }
+  }
+}
+
+/*
+ * Workflow Webhook
  */
 
 const createWorkflowWebhookResponse = (type, wid, title) => {
@@ -239,6 +311,36 @@ async function middleware (params, path) {
             // Send reply
             const response = createWorkflowTemplateResponse(templates);
             clients[path].replyV2(replyToken, response);
+          } else if (/\/searchLibrary\s.+$/.test(message.text)) {
+            const keyword = message.text.substr(message.text.indexOf(' ') + 1);
+            const userId = event.source.userId;
+
+            // Retrieve workflow from API
+            const templates = await searchLibrary(clients[path], userId, keyword);
+
+            // Send reply
+            const response = createLibraryResponse(templates);
+            clients[path].replyV2(replyToken, response);
+          } else if (/\/searchUser\s\w+\s\w+$/.test(message.text)) {
+            const [_, gid, uid] = message.text.split(' ');
+
+            // Retrieve workflow from API
+            const user = await searchUser(clients[path], gid, uid);
+            
+            let output;
+
+            if (user) {
+              output = `User=${JSON.stringify(user)}`;
+            } else {
+              output = 'User not found';
+            }
+
+            clients[path].replyV2(replyToken, [
+              {
+                "type": "text",
+                "text": output,
+              }
+            ]);
           } else {
             clients[path].replyV2(replyToken, createResponse(responseMap, message.text));
           }
