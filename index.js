@@ -89,7 +89,8 @@ const searchWorkflow = async (client, userId, keyword, tries = 0) => {
   try {
     // Retrieve only the first 13 elements, as that's the maximum number
     // of quick replies allowed.
-    const endpoint = 'api/workflow/v1/users/' + userId + '?keyword=' + keyword + '&limit=13';
+    const encodedKeyword = encodeURIComponent(keyword);
+    const endpoint = 'api/workflow/v1/users/' + userId + '?keyword=' + encodedKeyword + '&limit=13';
     const response = await client.instance.get(endpoint);
     const data = await response.data;
 
@@ -137,7 +138,8 @@ const searchWorkflowTemplate = async (client, keyword, tries = 0) => {
   try {
     // Retrieve only the first 13 elements, as that's the maximum number
     // of quick replies allowed.
-    const endpoint = 'api/workflow/v1?keyword=' + keyword + '&limit=13';
+    const encodedKeyword = encodeURIComponent(keyword);
+    const endpoint = 'api/workflow/v1?keyword=' + encodedKeyword + '&limit=13';
     const response = await client.instance.get(endpoint);
     const data = await response.data;
     
@@ -185,7 +187,8 @@ const searchLibrary = async (client, userId, keyword, tries = 0) => {
   try {
     // Retrieve only the first 13 elements, as that's the maximum number
     // of quick replies allowed.
-    const endpoint = 'api/library/v1/users/' + userId + '?keyword=' + keyword + '&limit=13';
+    const encodedKeyword = encodeURIComponent(keyword);
+    const endpoint = 'api/library/v1/users/' + userId + '?keyword=' + encodedKeyword + '&limit=13';
     const response = await client.instance.get(endpoint);
     const data = await response.data;
 
